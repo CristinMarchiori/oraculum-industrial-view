@@ -144,7 +144,7 @@ function cycleStatusFor(i: number, max: number, setpoint: number): CycleStatus {
 }
 
 export const cycles: Cycle[] = Array.from({ length: 64 }, (_, i) => {
-  const machine = machines[i % machines.length];
+  const machine = machines[i % machines.length]!;
   const setpoint = machine.id === "M03" ? 240 : 200;
   const r = rand(i + 1);
   const max = Math.round(setpoint * (0.82 + r * 0.24) * 10) / 10;
@@ -157,7 +157,7 @@ export const cycles: Cycle[] = Array.from({ length: 64 }, (_, i) => {
     startedAt: start.toISOString(),
     endedAt: end.toISOString(),
     durationS: duration,
-    operator: operators[i % operators.length],
+    operator: operators[i % operators.length]!,
     maxPressure: max,
     avgPressure: Math.round(max * 0.78 * 10) / 10,
     setpoint,
@@ -242,7 +242,7 @@ const logMessages: Record<LogLevel, string[]> = {
 };
 
 export const logEvents: LogEvent[] = Array.from({ length: 40 }, (_, i) => {
-  const level = logLevels[i % logLevels.length];
+  const level = logLevels[i % logLevels.length]!;
   const msgs = logMessages[level];
   const ts = new Date(Date.UTC(2026, 8, 5, 14, 31, 58) - i * 47_000);
   return {
@@ -250,6 +250,6 @@ export const logEvents: LogEvent[] = Array.from({ length: 40 }, (_, i) => {
     timestamp: ts.toISOString(),
     level,
     source: i % 3 === 0 ? "acquisition" : i % 3 === 1 ? "modbus" : "system",
-    message: msgs[i % msgs.length],
+    message: msgs[i % msgs.length]!,
   };
 });
