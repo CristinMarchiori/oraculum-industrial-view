@@ -205,7 +205,7 @@ function Header() {
         <div className="hidden items-center gap-4 border-l border-border pl-4 md:flex">
           <div>
             <div className="tech-label">Protocolo</div>
-            <div className="readout text-xs text-foreground">{machine.model}</div>
+            <div className="readout text-xs text-foreground">{machine.protocol}</div>
           </div>
           <div>
             <div className="tech-label">Endereço técnico</div>

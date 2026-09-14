@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cycleStatusTone } from "@/lib/status";
 import { machineService, resultsService } from "@/services/oraculum";
+import type { ProcessPeriod } from "@/mock/types";
 
 export const Route = createFileRoute("/resultados/$cycleId")({
   head: ({ params }) => ({ meta: [
@@ -35,4 +36,4 @@ function CycleDetail() {
 }
 
 function Reading({ label, value }: { label: string; value: string }) { return <div><span className="tech-label">{label}</span><strong className="readout mt-1 block text-lg">{value}</strong></div>; }
-function PeriodTable({ title, rows, pressure = false }: { title: string; rows: ReturnType<typeof resultsService.get> extends infer C ? NonNullable<C>["pressurePeriods"] : never; pressure?: boolean }) { return <Panel title={title} bodyClassName="p-0"><Table><TableHeader><TableRow><TableHead>Nº</TableHead><TableHead>Início</TableHead><TableHead>Fim</TableHead><TableHead>Duração</TableHead>{pressure && <TableHead>Limiar</TableHead>}</TableRow></TableHeader><TableBody>{rows.map((row) => <TableRow key={row.number}><TableCell>{row.number}</TableCell><TableCell>{row.startS.toFixed(1)} s</TableCell><TableCell>{row.endS.toFixed(1)} s</TableCell><TableCell>{row.durationS.toFixed(1)} s</TableCell>{pressure && <TableCell>{row.threshold?.toFixed(1)} bar</TableCell>}</TableRow>)}</TableBody></Table></Panel>; }
+function PeriodTable({ title, rows, pressure = false }: { title: string; rows: ProcessPeriod[]; pressure?: boolean }) { return <Panel title={title} bodyClassName="p-0"><Table><TableHeader><TableRow><TableHead>Nº</TableHead><TableHead>Início</TableHead><TableHead>Fim</TableHead><TableHead>Duração</TableHead>{pressure && <TableHead>Limiar</TableHead>}</TableRow></TableHeader><TableBody>{rows.map((row) => <TableRow key={row.number}><TableCell>{row.number}</TableCell><TableCell>{row.startS.toFixed(1)} s</TableCell><TableCell>{row.endS.toFixed(1)} s</TableCell><TableCell>{row.durationS.toFixed(1)} s</TableCell>{pressure && <TableCell>{row.threshold?.toFixed(1) ?? "--"} bar</TableCell>}</TableRow>)}</TableBody></Table></Panel>; }

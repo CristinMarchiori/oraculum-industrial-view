@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { FlaskConical, RotateCcw, Save } from "lucide-react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Panel } from "@/components/oraculum/Panel";
 import { useSession } from "@/components/oraculum/session";
 import { Button } from "@/components/ui/button";
@@ -34,5 +34,5 @@ function ConfigurationPage() {
     <div className="sticky bottom-0 flex flex-wrap items-center gap-2 border border-border bg-panel p-3"><p className="mr-auto text-sm text-muted-foreground">{message}</p><Button type="button" variant="outline" onClick={() => void run("communication")} disabled={!session.machineId || Boolean(busy)}><FlaskConical />{busy === "communication" ? "Testando..." : "Testar comunicação"}</Button><Button type="button" variant="outline" onClick={() => void run("vector")} disabled={!session.machineId || Boolean(busy)}>{busy === "vector" ? "Testando..." : "Testar vetor"}</Button><Button type="button" variant="secondary" onClick={() => setForm(saved)} disabled={!dirty}><RotateCcw />Descartar</Button><Button type="button" onClick={() => void run("save")} disabled={!dirty || Boolean(busy)}><Save />{busy === "save" ? "Salvando..." : "Salvar configuração"}</Button></div>
   </fieldset>;
 }
-function Field({ label, children }: { label: string; children: React.ReactNode }) { return <div className="mb-3 space-y-1"><Label>{label}</Label>{children}</div>; }
+function Field({ label, children }: { label: string; children: ReactNode }) { return <div className="mb-3 space-y-1"><Label>{label}</Label>{children}</div>; }
 function Check({ label, checked, onChange }: { label: string; checked: boolean; onChange: (value: boolean) => void }) { return <label className="mb-2 flex items-center gap-2 text-sm"><Checkbox checked={checked} onCheckedChange={(value) => onChange(value === true)} />{label}</label>; }
