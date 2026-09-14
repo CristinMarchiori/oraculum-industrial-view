@@ -179,9 +179,9 @@ function Header() {
             <Gauge className="h-4 w-4 text-primary" />
             <span>
               <span className="block font-display text-base font-semibold leading-none tracking-wide text-foreground">
-                {machine.name}
+                {machineId || pendingMachineId ? machine.name : "Nenhuma máquina"}
               </span>
-              <span className="tech-label">{machine.line}</span>
+              <span className="tech-label">{machineId || pendingMachineId ? machine.line : "Seleção pendente"}</span>
             </span>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-60">
@@ -205,12 +205,12 @@ function Header() {
         <div className="hidden items-center gap-4 border-l border-border pl-4 md:flex">
           <div>
             <div className="tech-label">Protocolo</div>
-            <div className="readout text-xs text-foreground">{machine.protocol}</div>
+            <div className="readout text-xs text-foreground">{machineId || pendingMachineId ? machine.protocol : "--"}</div>
           </div>
           <div>
             <div className="tech-label">Endereço técnico</div>
             <div className="readout text-xs text-foreground">
-              {machine.ip}:{machine.port}
+              {machineId || pendingMachineId ? `${machine.ip}:${machine.port}` : "--"}
             </div>
           </div>
         </div>
