@@ -30,6 +30,8 @@ export type MachineState =
 
 export type CycleStatus = "OK" | "WARNING" | "FAULT";
 
+export type PressureUnit = "bar" | "kgf/cm²";
+
 export interface Machine {
   id: string;
   name: string;
@@ -39,6 +41,7 @@ export interface Machine {
   port: number;
   line: string;
   available: boolean;
+  pressureUnit: PressureUnit;
 }
 
 export interface SignalDef {

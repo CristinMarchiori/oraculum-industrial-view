@@ -50,7 +50,7 @@ export function MetricCard({
       <div className="mt-2 flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
         <span className="inline-flex items-center gap-1 font-mono">
           <TrendIcon className={cn("h-3.5 w-3.5", toneText[tone])} />
-          {hint ?? "stable"}
+          {hint ?? "Estável"}
         </span>
         {target && <span className="readout">{target}</span>}
       </div>

@@ -1,4 +1,4 @@
-import type { ConnectionState, CycleStatus, LogLevel, MachineState } from "@/mock/types";
+import type { ConnectionState, CycleStatus, LogLevel, MachineState, MonitoringState } from "@/mock/types";
 
 export type Tone = "ok" | "warn" | "fault" | "info" | "idle";
 
@@ -51,6 +51,29 @@ export function machineStateTone(state: MachineState): Tone {
   }
 }
 
+export function machineStateLabel(state: MachineState): string {
+  const labels: Record<MachineState, string> = {
+    READY: "PRONTA",
+    RUNNING: "MONITORANDO",
+    PAUSED: "PAUSADA",
+    WARNING: "ATENÇÃO",
+    FAULT: "FALHA",
+    DISCONNECTED: "DESCONECTADA",
+  };
+  return labels[state];
+}
+
+export function monitoringLabel(state: MonitoringState): string {
+  const labels: Record<MonitoringState, string> = {
+    stopped: "PARADA",
+    waiting_trigger: "AGUARDANDO DISPARO",
+    running: "MONITORANDO",
+    paused: "PAUSADA",
+    completed: "CONCLUÍDA",
+  };
+  return labels[state];
+}
+
 export function connectionTone(state: ConnectionState): Tone {
   return state === "connected" ? "ok" : state === "unstable" || state === "connecting" || state === "waiting" ? "warn" : "fault";
 }
@@ -71,6 +94,14 @@ export function cycleStatusTone(status: CycleStatus): Tone {
   return status === "OK" ? "ok" : status === "WARNING" ? "warn" : "fault";
 }
 
+export function cycleStatusLabel(status: CycleStatus): string {
+  return status === "OK" ? "OK" : status === "WARNING" ? "ATENÇÃO" : "FALHA";
+}
+
 export function logLevelTone(level: LogLevel): Tone {
   return level === "INFO" ? "info" : level === "WARNING" ? "warn" : "fault";
+}
+
+export function logLevelLabel(level: LogLevel): string {
+  return level === "INFO" ? "INFORMAÇÃO" : level === "WARNING" ? "ATENÇÃO" : "ERRO";
 }
