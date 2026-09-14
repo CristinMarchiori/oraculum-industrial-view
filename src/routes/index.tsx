@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { getLiveBuffer, getMachine, getMachines, getNextSample } from "@/data/oraculum";
-import { machineStateTone } from "@/lib/status";
+import { machineStateLabel, machineStateTone, monitoringLabel } from "@/lib/status";
 import type { DemoScenario, Sample } from "@/mock/types";
 
 export const Route = createFileRoute("/")({
@@ -33,7 +33,14 @@ function Index() {
   const [zoom, setZoom] = useState(1);
   const indexRef = useRef(240);
   const machine = getMachine(session.pendingMachineId || session.machineId);
+  const confirmedMachine = getMachine(session.machineId);
   const confirmed = Boolean(session.machineId);
+  const acquisitionActive = session.monitoring === "running" || session.monitoring === "paused" || session.monitoring === "waiting_trigger";
+  const faulted = session.connection === "disconnected" || session.connection === "backend_unavailable" || session.machineState === "FAULT";
+  const canStart = confirmed && session.connection === "connected" && session.monitoring === "stopped" && !session.commandBusy && !faulted;
+  const canPause = session.connection === "connected" && (session.monitoring === "running" || session.monitoring === "paused") && !session.commandBusy;
+  const canStop = acquisitionActive && !session.commandBusy;
+  const canConfirm = Boolean(session.pendingMachineId) && session.pendingMachineId !== session.machineId && !acquisitionActive && !session.commandBusy;
 
   useEffect(() => {
     if (session.monitoring !== "running" || session.connection !== "connected") return;
@@ -51,13 +58,14 @@ function Index() {
   const latest = data.at(-1);
   const displayed = useMemo(() => data.slice(-Math.max(40, Math.round(data.length / zoom))), [data, zoom]);
   const command = (next: "running" | "paused" | "stopped") => {
+    if ((next === "running" && session.monitoring !== "paused" && !canStart) || (next === "paused" && !canPause) || (next === "stopped" && !canStop)) return;
     session.setMonitoring(next);
     session.setMachineState(next === "running" ? "RUNNING" : next === "paused" ? "PAUSED" : "READY");
-    session.setOperationalMessage(next === "running" ? "Aquisição simulada iniciada; aguardando trigger do ciclo." : next === "paused" ? "Aquisição simulada pausada." : "Aquisição simulada encerrada com segurança.");
+    session.setOperationalMessage(next === "running" ? (session.monitoring === "paused" ? "Aquisição simulada retomada." : "Aquisição simulada iniciada; aguardando disparo do ciclo.") : next === "paused" ? "Aquisição simulada pausada." : "Aquisição simulada encerrada com segurança.");
   };
   const scenarios: { value: DemoScenario; label: string }[] = [
     { value: "no-machine", label: "Nenhuma máquina" }, { value: "schneider", label: "Schneider conectada" },
-    { value: "rockwell", label: "Rockwell conectada" }, { value: "waiting-trigger", label: "Aguardando trigger" },
+    { value: "rockwell", label: "Rockwell conectada" }, { value: "waiting-trigger", label: "Aguardando disparo" },
     { value: "running", label: "Ciclo em andamento" }, { value: "paused", label: "Ciclo pausado" },
     { value: "communication-fault", label: "Falha de comunicação" }, { value: "completed", label: "Ciclo concluído" },
     { value: "partial-save", label: "Resultado salvo parcialmente" }, { value: "no-temperature", label: "Temperaturas não configuradas" },
@@ -73,18 +81,18 @@ function Index() {
       </section>
 
       <Panel title="Seleção segura de máquina" subtitle={confirmed ? "Máquina confirmada" : "Confirmação necessária"} bodyClassName="grid gap-3 md:grid-cols-[minmax(220px,1fr)_1fr_auto] md:items-end">
-        <label className="space-y-1"><span className="tech-label block">Máquina a monitorar</span><Select value={session.pendingMachineId} onValueChange={session.setPendingMachineId} disabled={session.monitoring === "running" || session.monitoring === "paused"}><SelectTrigger><SelectValue placeholder="Selecione uma máquina" /></SelectTrigger><SelectContent>{getMachines().map((item) => <SelectItem key={item.id} value={item.id} disabled={!item.available}>{item.name} · {item.model}</SelectItem>)}</SelectContent></Select></label>
+        <label className="space-y-1"><span className="tech-label block">Máquina a monitorar</span><Select value={session.pendingMachineId} onValueChange={session.setPendingMachineId} disabled={acquisitionActive}><SelectTrigger><SelectValue placeholder="Selecione uma máquina" /></SelectTrigger><SelectContent>{getMachines().map((item) => <SelectItem key={item.id} value={item.id} disabled={!item.available}>{item.name} · {item.model}</SelectItem>)}</SelectContent></Select></label>
         <div className="grid grid-cols-2 gap-3 rounded-sm border border-border bg-background/30 p-2"><div><span className="tech-label block">Protocolo</span><span className="readout text-sm">{session.pendingMachineId ? machine.protocol : "--"}</span></div><div><span className="tech-label block">Endereço técnico</span><span className="readout text-sm">{session.pendingMachineId ? `${machine.ip}:${machine.port}` : "--"}</span></div></div>
-        <Button onClick={() => void session.confirmMachine()} disabled={!session.pendingMachineId || session.commandBusy || session.monitoring === "running" || session.monitoring === "paused"}>{session.commandBusy ? "Confirmando..." : "Confirmar máquina"}</Button>
+        <Button onClick={() => void session.confirmMachine()} disabled={!canConfirm}>{session.commandBusy ? "Confirmando..." : "Confirmar máquina"}</Button>
       </Panel>
 
-      <Panel title="Controle de aquisição" subtitle="Amostragem simulada · 250 ms" actions={<div className="flex flex-wrap gap-2"><Button size="sm" onClick={() => command("running")} disabled={!confirmed || session.connection !== "connected" || session.monitoring === "running" || session.commandBusy}><Play />Iniciar</Button><Button size="sm" variant="secondary" onClick={() => command(session.monitoring === "paused" ? "running" : "paused")} disabled={session.monitoring !== "running" && session.monitoring !== "paused"}>{session.monitoring === "paused" ? <Play /> : <Pause />}{session.monitoring === "paused" ? "Continuar" : "Pausar"}</Button><AlertDialog><AlertDialogTrigger asChild><Button size="sm" variant="destructive" disabled={session.monitoring !== "running" && session.monitoring !== "paused"}><Square />Parar</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Parar a aquisição ativa?</AlertDialogTitle><AlertDialogDescription>O ciclo simulado atual será encerrado. Os dados já coletados continuarão visíveis.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => command("stopped")}>Parar aquisição</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog></div>}>
-        <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-sm text-muted-foreground">{session.operationalMessage}</p><StatusBadge tone={machineStateTone(session.machineState)} label={session.monitoring.replace("_", " ")} /></div>
+      <Panel title="Controle de aquisição" subtitle="Amostragem simulada · 250 ms" actions={<div className="flex flex-wrap gap-2"><Button size="sm" onClick={() => command("running")} disabled={!canStart}><Play />Iniciar</Button><Button size="sm" variant="secondary" onClick={() => command(session.monitoring === "paused" ? "running" : "paused")} disabled={!canPause}>{session.monitoring === "paused" ? <Play /> : <Pause />}{session.monitoring === "paused" ? "Continuar" : "Pausar"}</Button><AlertDialog><AlertDialogTrigger asChild><Button size="sm" variant="destructive" disabled={!canStop}><Square />Parar</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Parar a aquisição ativa?</AlertDialogTitle><AlertDialogDescription>O ciclo simulado atual será encerrado. Os dados já coletados continuarão visíveis.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={() => command("stopped")}>Parar aquisição</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog></div>}>
+        <div className="flex flex-wrap items-center justify-between gap-3"><p className={faulted ? "text-sm text-warn" : "text-sm text-muted-foreground"}>{session.operationalMessage}</p><StatusBadge tone={machineStateTone(session.machineState)} label={monitoringLabel(session.monitoring)} /></div>
       </Panel>
 
       <section className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Pressão atual" value={confirmed ? latest?.pressure.toFixed(1).replace(".", ",") ?? "--" : "--"} unit="bar" tone={confirmed ? "ok" : "idle"} hint={confirmed ? "Dentro da faixa" : "Indisponível"} />
-        <MetricCard label="Pressão programada" value={confirmed ? latest?.setpoint.toFixed(1).replace(".", ",") ?? "--" : "--"} unit="bar" tone="info" hint="Referência do ciclo" />
+        <MetricCard label="Pressão atual" value={confirmed ? latest?.pressure.toFixed(1).replace(".", ",") ?? "--" : "--"} unit={confirmedMachine.pressureUnit} tone={faulted ? "warn" : confirmed ? "ok" : "idle"} hint={faulted ? "Último valor válido · desatualizado" : confirmed ? "Dentro da faixa" : "Indisponível"} />
+        <MetricCard label="Pressão programada" value={confirmed ? latest?.setpoint.toFixed(1).replace(".", ",") ?? "--" : "--"} unit={confirmedMachine.pressureUnit} tone={faulted ? "warn" : "info"} hint={faulted ? "Valor preservado" : "Referência do ciclo"} />
         <MetricCard label="Inércia de pressão" value={confirmed ? "18,4" : "--"} unit="UINT" tone="info" hint="Sinal de processo" />
         <MetricCard label="Duração do ciclo" value={session.monitoring === "running" ? "02:43" : "--:--"} unit="min" tone={session.monitoring === "running" ? "ok" : "idle"} hint={session.monitoring === "running" ? "Ciclo em acompanhamento" : "Aguardando ciclo"} />
         <MetricCard label="Temperatura programada" value={confirmed && session.temperaturesConfigured ? "45,0" : "--"} unit="°C" tone={session.temperaturesConfigured ? "info" : "idle"} hint={session.temperaturesConfigured ? "Faixa configurada" : "Não configurada"} />
@@ -94,10 +102,10 @@ function Index() {
       </section>
 
       <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_280px]">
-        <Panel title="Evolução do processo" subtitle={session.connection === "disconnected" ? "Dados desatualizados · últimos valores preservados" : "Cursor sobre o gráfico exibe a leitura"} actions={<div className="flex gap-1"><Button size="icon" variant="ghost" title="Aumentar zoom" onClick={() => setZoom((v) => Math.min(4, v + 0.5))}><ZoomIn /></Button><Button size="icon" variant="ghost" title="Reduzir zoom" onClick={() => setZoom((v) => Math.max(1, v - 0.5))}><ZoomOut /></Button><Button size="icon" variant="ghost" title="Restaurar visualização" onClick={() => setZoom(1)}><RotateCcw /></Button></div>}>
-          <Tabs defaultValue="pressure"><TabsList className="rounded-sm"><TabsTrigger value="pressure">Pressão</TabsTrigger><TabsTrigger value="temperature">Temperatura</TabsTrigger></TabsList><TabsContent value="pressure"><ScopeLegend mode="pressure" visible={visible} onToggle={(key) => setVisible((v) => ({ ...v, [key]: !v[key] }))} />{confirmed ? <Oscilloscope data={displayed} visible={visible} mode="pressure" height={360} /> : <EmptyChart text="Confirme uma máquina para visualizar as amostras." />}</TabsContent><TabsContent value="temperature"><ScopeLegend mode="temperature" visible={visible} onToggle={(key) => setVisible((v) => ({ ...v, [key]: !v[key] }))} />{confirmed && session.temperaturesConfigured ? <Oscilloscope data={displayed} visible={visible} mode="temperature" height={360} /> : <EmptyChart text="Temperaturas não configuradas ou sem amostras." />}</TabsContent></Tabs>
+        <Panel title="Evolução do processo" subtitle={faulted ? "Dados desatualizados · últimos valores válidos preservados" : "Cursor sobre o gráfico exibe a leitura"} actions={<div className="flex gap-1"><Button size="icon" variant="ghost" title="Aumentar zoom" onClick={() => setZoom((v) => Math.min(4, v + 0.5))}><ZoomIn /></Button><Button size="icon" variant="ghost" title="Reduzir zoom" onClick={() => setZoom((v) => Math.max(1, v - 0.5))}><ZoomOut /></Button><Button size="icon" variant="ghost" title="Restaurar visualização" onClick={() => setZoom(1)}><RotateCcw /></Button></div>}>
+          <Tabs defaultValue="pressure"><TabsList className="rounded-sm"><TabsTrigger value="pressure">Pressão</TabsTrigger><TabsTrigger value="temperature">Temperatura</TabsTrigger></TabsList><TabsContent value="pressure"><ScopeLegend mode="pressure" pressureUnit={confirmedMachine.pressureUnit} visible={visible} onToggle={(key) => setVisible((v) => ({ ...v, [key]: !v[key] }))} />{confirmed ? <Oscilloscope data={displayed} visible={visible} mode="pressure" pressureUnit={confirmedMachine.pressureUnit} height={360} /> : <EmptyChart text="Confirme uma máquina para visualizar as amostras." />}</TabsContent><TabsContent value="temperature"><ScopeLegend mode="temperature" visible={visible} onToggle={(key) => setVisible((v) => ({ ...v, [key]: !v[key] }))} />{confirmed && session.temperaturesConfigured ? <Oscilloscope data={displayed} visible={visible} mode="temperature" height={360} /> : <EmptyChart text="Temperaturas não configuradas ou sem amostras." />}</TabsContent></Tabs>
         </Panel>
-        <div className="space-y-3"><StatusPlate tone={machineStateTone(session.machineState)} state={session.machineState} caption={confirmed ? `${machine.name} · ${session.monitoring === "waiting_trigger" ? "Aguardando trigger" : "Trigger armado"}` : "Máquina não confirmada"} /><Panel title="Tempo sob pressão" subtitle="2 períodos"><Period label="Período 1" value="5,7 s" /><Period label="Período 2" value="3,7 s" /></Panel><Panel title="Alívio de pressão" subtitle="1 período"><Period label="Alívio 1" value="2,7 s" /></Panel></div>
+        <div className="space-y-3"><StatusPlate tone={machineStateTone(session.machineState)} state={machineStateLabel(session.machineState)} caption={confirmed ? `${confirmedMachine.name} · ${session.monitoring === "waiting_trigger" ? "Aguardando disparo" : faulted ? "Dados desatualizados" : "Disparo armado"}` : "Máquina não confirmada"} /><Panel title="Tempo sob pressão" subtitle="2 períodos"><Period label="Período 1" value="5,7 s" /><Period label="Período 2" value="3,7 s" /></Panel><Panel title="Alívio de pressão" subtitle="1 período"><Period label="Alívio 1" value="2,7 s" /></Panel></div>
       </div>
     </div>
   );

@@ -20,7 +20,7 @@ import type {
 export const getMachines = (): Machine[] => mock.machines;
 export const getMachine = (id: string): Machine =>
   mock.machines.find((m) => m.id === id) ?? mock.machines[0] ?? {
-    id: "none", name: "Nenhuma máquina", model: "--", protocol: "--", ip: "--", port: 0, line: "--", available: false,
+    id: "none", name: "Nenhuma máquina", model: "--", protocol: "--", ip: "--", port: 0, line: "--", available: false, pressureUnit: "bar",
   };
 
 export const getSignals = (): SignalDef[] => mock.signals;

@@ -17,10 +17,11 @@ import { getMachine, getMachines } from "@/data/oraculum";
 import {
   connectionLabel,
   connectionTone,
+  machineStateLabel,
   machineStateTone,
+  monitoringLabel,
   toneText,
 } from "@/lib/status";
-import type { ConnectionState } from "@/mock/types";
 import { StatusBadge, StatusDot } from "./StatusIndicator";
 import { useSession } from "./session";
 import {
@@ -35,10 +36,10 @@ import {
 const APP_VERSION = "v2.0.0-rc1";
 
 const navItems = [
-  { to: "/", label: "Monitoração", caption: "Live", icon: Activity },
-  { to: "/resultados", label: "Resultados", caption: "Cycles", icon: ListChecks },
-  { to: "/configuracao", label: "Configuração", caption: "Setup", icon: Settings2 },
-  { to: "/diagnostico", label: "Diagnóstico", caption: "Health", icon: Stethoscope },
+  { to: "/", label: "Monitoração", caption: "Ao vivo", icon: Activity },
+  { to: "/resultados", label: "Resultados", caption: "Ciclos", icon: ListChecks },
+  { to: "/configuracao", label: "Configuração", caption: "Parâmetros", icon: Settings2 },
+  { to: "/diagnostico", label: "Diagnóstico", caption: "Integridade", icon: Stethoscope },
 ] as const;
 
 function Clock() {
@@ -88,7 +89,7 @@ function Sidebar({
               ORACULUM
             </div>
             <div className="tech-label mt-1 truncate text-[9px]">
-              Industrial Monitoring &amp; Analysis
+              Monitoração e análise industrial
             </div>
           </div>
         )}
@@ -142,7 +143,7 @@ function Sidebar({
           <>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <UserRound className="h-3.5 w-3.5" />
-              <span className="truncate">operator · local</span>
+               <span className="truncate">Operador local</span>
             </div>
             <div className="tech-label">{APP_VERSION}</div>
           </>
@@ -165,17 +166,18 @@ function Sidebar({
 }
 
 function Header() {
-  const { machineId, pendingMachineId, setPendingMachineId, connection, setConnection, machineState, monitoring } =
+  const { machineId, pendingMachineId, setPendingMachineId, connection, machineState, monitoring } =
     useSession();
   const machine = getMachine(machineId || pendingMachineId);
   const cTone = connectionTone(connection);
   const mTone = machineStateTone(machineState);
+  const acquisitionActive = monitoring === "running" || monitoring === "paused";
 
   return (
     <header className="flex h-16 shrink-0 flex-wrap items-center justify-between gap-3 border-b border-border bg-panel-header px-4">
       <div className="flex items-center gap-4">
         <DropdownMenu>
-          <DropdownMenuTrigger className="flex items-center gap-3 rounded-sm border border-border bg-panel px-3 py-1.5 text-left transition-colors hover:border-primary/50">
+          <DropdownMenuTrigger disabled={acquisitionActive} className="flex items-center gap-3 rounded-sm border border-border bg-panel px-3 py-1.5 text-left transition-colors hover:border-primary/50 disabled:cursor-not-allowed disabled:opacity-50">
             <Gauge className="h-4 w-4 text-primary" />
             <span>
               <span className="block font-display text-base font-semibold leading-none tracking-wide text-foreground">
@@ -217,30 +219,19 @@ function Header() {
       </div>
 
       <div className="flex items-center gap-3">
-        <StatusBadge tone={mTone} label={machineState} />
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            className={cn(
-              "flex items-center gap-2 rounded-sm border border-border bg-panel px-2.5 py-1.5 text-xs transition-colors hover:border-primary/50",
-              toneText[cTone],
-            )}
-          >
+         <StatusBadge tone={mTone} label={machineStateLabel(machineState)} />
+        <div
+          className={cn(
+            "flex items-center gap-2 rounded-sm border border-border bg-panel px-2.5 py-1.5 text-xs",
+            toneText[cTone],
+          )}
+        >
             <Cable className="h-3.5 w-3.5" />
             <StatusDot tone={cTone} pulse={connection !== "disconnected"} />
             <span className="readout">{connectionLabel(connection)}</span>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel className="tech-label">Simular comunicação</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {(["connected", "unstable", "disconnected"] as ConnectionState[]).map((c) => (
-              <DropdownMenuItem key={c} onClick={() => setConnection(c)}>
-                {connectionLabel(c)}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        </div>
         <span className="hidden readout text-[11px] text-muted-foreground lg:inline">
-          {monitoring === "running" ? "AQUISIÇÃO ATIVA" : monitoring === "paused" ? "AQUISIÇÃO PAUSADA" : "AQUISIÇÃO PARADA"}
+           AQUISIÇÃO {monitoringLabel(monitoring)}
         </span>
         <Clock />
       </div>

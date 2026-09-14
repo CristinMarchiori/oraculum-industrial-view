@@ -35,14 +35,14 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [temperaturesConfigured, setTemperaturesConfigured] = useState(true);
 
   const confirmMachine = async () => {
-    if (!pendingMachineId || monitoring === "running" || monitoring === "paused") return;
+    if (!pendingMachineId || pendingMachineId === machineId || monitoring === "running" || monitoring === "paused" || monitoring === "waiting_trigger") return;
     setCommandBusy(true);
     setOperationalMessage("Confirmando máquina de demonstração...");
     await new Promise((resolve) => setTimeout(resolve, 450));
     setMachineId(pendingMachineId);
     setConnection("connected");
     setMachineState("READY");
-    setOperationalMessage("Máquina confirmada. Monitoração liberada.");
+    setOperationalMessage("Máquina confirmada. Início da monitoração liberado.");
     setCommandBusy(false);
   };
 
@@ -59,7 +59,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const selected = next === "rockwell" ? rockwell : schneider;
     if (selected) { setMachineId(selected.id); setPendingMachineId(selected.id); }
     if (next === "communication-fault") {
-      setConnection("disconnected"); setMonitoring("stopped"); setMachineState("FAULT"); setOperationalMessage("Falha simulada de comunicação. Últimos dados preservados."); return;
+      setConnection("disconnected"); setMonitoring("stopped"); setMachineState("FAULT"); setOperationalMessage("Falha simulada de comunicação. Últimos dados preservados e possivelmente desatualizados."); return;
     }
     setConnection("connected");
     if (next === "waiting-trigger") { setMonitoring("waiting_trigger"); setMachineState("READY"); }

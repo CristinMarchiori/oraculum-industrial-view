@@ -6,3 +6,7 @@
 - [x] Construir Configuração e retornos simulados
 - [x] Construir Diagnóstico e eventos
 - [x] Validar navegação, estados e contratos TypeScript
+- [ ] Padronizar todos os textos visíveis em português do Brasil
+- [ ] Refinar bloqueios e estados dos comandos de aquisição
+- [ ] Propagar a unidade de pressão definida por máquina
+- [ ] Validar cenários operacionais e apresentação no navegador
