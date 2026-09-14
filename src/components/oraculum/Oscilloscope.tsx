@@ -12,7 +12,7 @@ import type { Sample } from "@/mock/types";
 import { cn } from "@/lib/utils";
 
 export interface TraceDef {
-  key: "pressure" | "setpoint" | "temperature";
+  key: "pressure" | "setpoint" | "temperature" | "temperature2" | "pressureMin" | "pressureMax" | "temperatureMin" | "temperatureMax";
   label: string;
   color: string;
   unit: string;
@@ -45,11 +45,27 @@ export const TRACES: TraceDef[] = [
   },
 ];
 
+const TEMP_TRACES: TraceDef[] = [
+  { key: "temperature", label: "Temperatura lida 1", color: "var(--signal-pressure)", unit: "°C", axis: "right" },
+  { key: "temperature2", label: "Temperatura lida 2", color: "var(--signal-temp)", unit: "°C", axis: "right" },
+  { key: "temperatureMin", label: "Limite mínimo", color: "var(--warn)", unit: "°C", axis: "right", dashed: true },
+  { key: "temperatureMax", label: "Limite máximo", color: "var(--fault)", unit: "°C", axis: "right", dashed: true },
+];
+
+const PRESSURE_TRACES: TraceDef[] = [
+  TRACES[0] as TraceDef,
+  TRACES[1] as TraceDef,
+  { key: "pressureMin", label: "Limite mínimo", color: "var(--warn)", unit: "bar", dashed: true, axis: "left" },
+  { key: "pressureMax", label: "Limite máximo", color: "var(--fault)", unit: "bar", dashed: true, axis: "left" },
+];
+
 interface OscilloscopeProps {
   data: Sample[];
   visible: Record<string, boolean>;
   height?: number;
   className?: string;
+  mode?: "pressure" | "temperature" | "all";
+  domain?: [number, number];
 }
 
 function ScopeTooltip({ active, payload, label }: any) {
@@ -78,8 +94,11 @@ export function Oscilloscope({
   visible,
   height = 340,
   className,
+  mode = "all",
+  domain,
 }: OscilloscopeProps) {
-  const shown = useMemo(() => TRACES.filter((t) => visible[t.key]), [visible]);
+  const definitions = mode === "pressure" ? PRESSURE_TRACES : mode === "temperature" ? TEMP_TRACES : TRACES;
+  const shown = useMemo(() => definitions.filter((t) => visible[t.key] !== false), [definitions, visible]);
 
   return (
     <div className={cn("relative w-full", className)} style={{ height }}>
@@ -89,7 +108,7 @@ export function Oscilloscope({
           <XAxis
             dataKey="t"
             type="number"
-            domain={["dataMin", "dataMax"]}
+            domain={domain ?? ["dataMin", "dataMax"]}
             tickFormatter={(v: number) => `${v.toFixed(1)}s`}
             stroke="var(--muted-foreground)"
             tick={{ fontSize: 11, fontFamily: "var(--font-mono)" }}
@@ -140,14 +159,17 @@ export function Oscilloscope({
 export function ScopeLegend({
   visible,
   onToggle,
+  mode = "all",
 }: {
   visible: Record<string, boolean>;
   onToggle: (key: string) => void;
+  mode?: "pressure" | "temperature" | "all";
 }) {
+  const definitions = mode === "pressure" ? PRESSURE_TRACES : mode === "temperature" ? TEMP_TRACES : TRACES;
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {TRACES.map((t) => {
-        const on = visible[t.key];
+      {definitions.map((t) => {
+        const on = visible[t.key] !== false;
         return (
           <button
             key={t.key}

@@ -1,0 +1,38 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { FlaskConical, RotateCcw, Save } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { Panel } from "@/components/oraculum/Panel";
+import { useSession } from "@/components/oraculum/session";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getMachine } from "@/data/oraculum";
+import { configurationService } from "@/services/oraculum";
+import type { AppConfiguration } from "@/mock/types";
+
+const initial: AppConfiguration = { offsetModbus: 0, triggerTag: "MW3000:UINT", monitorFlagTag: "MW3004:UINT", triggerType: "NIVEL", triggerEnabled: true, monitorZeroPressure: false, pressureTag: "MW413:UINT", setpointTag: "MW3002:UINT", inertiaTag: "MW414:UINT", programmedTemperatureTag: "MW409:UINT", temperature1Tag: "MW410:UINT", temperature2Tag: "MW411:UINT" };
+
+export const Route = createFileRoute("/configuracao")({
+  head: () => ({ meta: [{ title: "Configuração — Oraculum" }, { name: "description", content: "Configuração simulada de comunicação, ciclo e sinais do Oraculum." }, { property: "og:title", content: "Configuração — Oraculum" }, { property: "og:description", content: "Configuração simulada de comunicação, ciclo e sinais do Oraculum." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" }] }), component: ConfigurationPage,
+});
+
+function ConfigurationPage() {
+  const session = useSession(); const machine = getMachine(session.machineId); const locked = session.monitoring === "running" || session.monitoring === "paused";
+  const [form, setForm] = useState(initial); const [saved, setSaved] = useState(initial); const [busy, setBusy] = useState(""); const [message, setMessage] = useState("Configuração carregada no adaptador de demonstração.");
+  const dirty = JSON.stringify(form) !== JSON.stringify(saved); const thermalValues = [form.programmedTemperatureTag, form.temperature1Tag, form.temperature2Tag]; const thermalPartial = thermalValues.some(Boolean) && !thermalValues.every(Boolean);
+  const patch = <K extends keyof AppConfiguration>(key: K, value: AppConfiguration[K]) => setForm((current) => ({ ...current, [key]: value }));
+  const run = async (kind: "communication" | "vector" | "save") => { setBusy(kind); if (kind === "save") { await configurationService.save(form); setSaved(form); setMessage(thermalPartial ? "Configuração salva; aquisição térmica desabilitada por preenchimento incompleto." : "Configuração simulada salva com sucesso."); } else { const result = kind === "communication" ? await configurationService.testCommunication() : await configurationService.testVector(); setMessage(result.message); } setBusy(""); };
+  return <fieldset disabled={locked} className="space-y-4 disabled:opacity-70">
+    <header><p className="tech-label">Sistema / Parâmetros</p><h1 className="font-display text-2xl font-semibold uppercase">Configuração</h1><p className="text-sm text-muted-foreground">{locked ? "Edição bloqueada durante a aquisição." : "Alterações locais do modo de demonstração."}</p></header>
+    {(dirty || thermalPartial) && <div className={`border p-3 text-sm ${thermalPartial ? "border-warn/40 bg-warn/10 text-warn" : "border-info/40 bg-info/10 text-info"}`}>{thermalPartial ? "Configuração térmica incompleta. Preencha os três sinais ou deixe todos vazios." : "Existem alterações ainda não salvas."}</div>}
+    <div className="grid gap-3 xl:grid-cols-2"><Panel title="Comunicação" subtitle="Definida pelo cadastro da máquina"><Field label="Máquina"><Input value={machine.name} readOnly /></Field><div className="grid grid-cols-2 gap-3"><Field label="Protocolo"><Input value={machine.protocol} readOnly /></Field><Field label="Porta"><Input value={machine.port || "--"} readOnly /></Field></div><Field label="IP do CLP"><Input value={machine.ip} readOnly /></Field><Field label="Offset Modbus"><Input type="number" value={form.offsetModbus} onChange={(e) => patch("offsetModbus", Number(e.target.value))} /></Field></Panel>
+    <Panel title="Controle do ciclo" subtitle="Trigger e monitor"><Field label="Trigger"><Input value={form.triggerTag} onChange={(e) => patch("triggerTag", e.target.value)} /></Field><Field label="Flag monitor"><Input value={form.monitorFlagTag} onChange={(e) => patch("monitorFlagTag", e.target.value)} /></Field><Field label="Tipo"><Select value={form.triggerType} onValueChange={(value) => patch("triggerType", value as AppConfiguration["triggerType"])}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{["NIVEL","BORDA","SUBIDA","DESCIDA"].map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}</SelectContent></Select></Field><Check label="Trigger habilitado" checked={form.triggerEnabled} onChange={(value) => patch("triggerEnabled", value)} /><Check label="Monitorar pressão zero" checked={form.monitorZeroPressure} onChange={(value) => patch("monitorZeroPressure", value)} /></Panel>
+    <Panel title="Sinais de pressão"><Field label="Pressão lida"><Input value={form.pressureTag} onChange={(e) => patch("pressureTag", e.target.value)} /></Field><Field label="Pressão programada"><Input value={form.setpointTag} onChange={(e) => patch("setpointTag", e.target.value)} /></Field><Field label="Inércia"><Input value={form.inertiaTag} onChange={(e) => patch("inertiaTag", e.target.value)} /></Field></Panel>
+    <Panel title="Sinais de temperatura" subtitle={thermalPartial ? "Incompleta" : "Configuração válida"}><Field label="Temperatura programada"><Input value={form.programmedTemperatureTag} onChange={(e) => patch("programmedTemperatureTag", e.target.value)} /></Field><Field label="Temperatura lida 1"><Input value={form.temperature1Tag} onChange={(e) => patch("temperature1Tag", e.target.value)} /></Field><Field label="Temperatura lida 2"><Input value={form.temperature2Tag} onChange={(e) => patch("temperature2Tag", e.target.value)} /></Field></Panel></div>
+    <div className="sticky bottom-0 flex flex-wrap items-center gap-2 border border-border bg-panel p-3"><p className="mr-auto text-sm text-muted-foreground">{message}</p><Button type="button" variant="outline" onClick={() => void run("communication")} disabled={!session.machineId || Boolean(busy)}><FlaskConical />{busy === "communication" ? "Testando..." : "Testar comunicação"}</Button><Button type="button" variant="outline" onClick={() => void run("vector")} disabled={!session.machineId || Boolean(busy)}>{busy === "vector" ? "Testando..." : "Testar vetor"}</Button><Button type="button" variant="secondary" onClick={() => setForm(saved)} disabled={!dirty}><RotateCcw />Descartar</Button><Button type="button" onClick={() => void run("save")} disabled={!dirty || Boolean(busy)}><Save />{busy === "save" ? "Salvando..." : "Salvar configuração"}</Button></div>
+  </fieldset>;
+}
+function Field({ label, children }: { label: string; children: ReactNode }) { return <div className="mb-3 space-y-1"><Label>{label}</Label>{children}</div>; }
+function Check({ label, checked, onChange }: { label: string; checked: boolean; onChange: (value: boolean) => void }) { return <label className="mb-2 flex items-center gap-2 text-sm"><Checkbox checked={checked} onCheckedChange={(value) => onChange(value === true)} />{label}</label>; }

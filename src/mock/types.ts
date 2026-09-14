@@ -1,4 +1,24 @@
-export type ConnectionState = "connected" | "unstable" | "disconnected";
+export type ConnectionState =
+  | "waiting"
+  | "connecting"
+  | "connected"
+  | "unstable"
+  | "disconnected"
+  | "backend_unavailable";
+
+export type MonitoringState = "stopped" | "waiting_trigger" | "running" | "paused" | "completed";
+
+export type DemoScenario =
+  | "no-machine"
+  | "schneider"
+  | "rockwell"
+  | "waiting-trigger"
+  | "running"
+  | "paused"
+  | "communication-fault"
+  | "completed"
+  | "partial-save"
+  | "no-temperature";
 
 export type MachineState =
   | "READY"
@@ -18,6 +38,7 @@ export interface Machine {
   ip: string;
   port: number;
   line: string;
+  available: boolean;
 }
 
 export interface SignalDef {
@@ -36,6 +57,11 @@ export interface Sample {
   pressure: number;
   setpoint: number;
   temperature: number;
+  temperature2?: number | null;
+  pressureMin?: number | null;
+  pressureMax?: number | null;
+  temperatureMin?: number | null;
+  temperatureMax?: number | null;
 }
 
 export interface LiveReading {
@@ -62,6 +88,22 @@ export interface Cycle {
   reliefTime: number;
   maxTemperature: number;
   status: CycleStatus;
+  sampleCount: number;
+  pressurePeriods: ProcessPeriod[];
+  reliefPeriods: ProcessPeriod[];
+  csvSaved: boolean;
+  pngSaved: boolean;
+  baseFile: string;
+  saveMessage: string;
+}
+
+export interface ProcessPeriod {
+  number: number;
+  startS: number;
+  endS: number;
+  durationS: number;
+  startPressure?: number;
+  threshold?: number;
 }
 
 export type LogLevel = "INFO" | "WARNING" | "ERROR";
@@ -111,4 +153,36 @@ export interface TriggerConfig {
   unit: string;
   edge: "Rising" | "Falling";
   time: string;
+}
+
+export interface MonitoringSnapshot {
+  monitoring: MonitoringState;
+  connection: ConnectionState;
+  cycleActive: boolean;
+  samples: number;
+  pressure: number | null;
+  setpoint: number | null;
+  inertia: number | null;
+  cycleDurationS: number;
+  programmedTemperature: number | null;
+  temperature1: number | null;
+  temperature2: number | null;
+  lastFile: string | null;
+  message: string;
+  stale: boolean;
+}
+
+export interface AppConfiguration {
+  offsetModbus: number;
+  triggerTag: string;
+  monitorFlagTag: string;
+  triggerType: "NIVEL" | "BORDA" | "SUBIDA" | "DESCIDA";
+  triggerEnabled: boolean;
+  monitorZeroPressure: boolean;
+  pressureTag: string;
+  setpointTag: string;
+  inertiaTag: string;
+  programmedTemperatureTag: string;
+  temperature1Tag: string;
+  temperature2Tag: string;
 }

@@ -10,33 +10,98 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ConfiguracaoRouteImport } from './routes/configuracao'
+import { Route as DiagnosticoRouteImport } from './routes/diagnostico'
+import { Route as ResultadosRouteImport } from './routes/resultados'
+import { Route as ResultadosIndexRouteImport } from './routes/resultados.index'
+import { Route as ResultadosCycleIdRouteImport } from './routes/resultados.$cycleId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ConfiguracaoRoute = ConfiguracaoRouteImport.update({
+  id: '/configuracao',
+  path: '/configuracao',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DiagnosticoRoute = DiagnosticoRouteImport.update({
+  id: '/diagnostico',
+  path: '/diagnostico',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResultadosRoute = ResultadosRouteImport.update({
+  id: '/resultados',
+  path: '/resultados',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResultadosIndexRoute = ResultadosIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ResultadosRoute,
+} as any)
+const ResultadosCycleIdRoute = ResultadosCycleIdRouteImport.update({
+  id: '/$cycleId',
+  path: '/$cycleId',
+  getParentRoute: () => ResultadosRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/configuracao': typeof ConfiguracaoRoute
+  '/diagnostico': typeof DiagnosticoRoute
+  '/resultados': typeof ResultadosRouteWithChildren
+  '/resultados/$cycleId': typeof ResultadosCycleIdRoute
+  '/resultados/': typeof ResultadosIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/configuracao': typeof ConfiguracaoRoute
+  '/diagnostico': typeof DiagnosticoRoute
+  '/resultados/$cycleId': typeof ResultadosCycleIdRoute
+  '/resultados': typeof ResultadosIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/configuracao': typeof ConfiguracaoRoute
+  '/diagnostico': typeof DiagnosticoRoute
+  '/resultados': typeof ResultadosRouteWithChildren
+  '/resultados/$cycleId': typeof ResultadosCycleIdRoute
+  '/resultados/': typeof ResultadosIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/configuracao'
+    | '/diagnostico'
+    | '/resultados'
+    | '/resultados/$cycleId'
+    | '/resultados/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/configuracao'
+    | '/diagnostico'
+    | '/resultados/$cycleId'
+    | '/resultados'
+  id:
+    | '__root__'
+    | '/'
+    | '/configuracao'
+    | '/diagnostico'
+    | '/resultados'
+    | '/resultados/$cycleId'
+    | '/resultados/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ConfiguracaoRoute: typeof ConfiguracaoRoute
+  DiagnosticoRoute: typeof DiagnosticoRoute
+  ResultadosRoute: typeof ResultadosRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +113,63 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/configuracao': {
+      id: '/configuracao'
+      path: '/configuracao'
+      fullPath: '/configuracao'
+      preLoaderRoute: typeof ConfiguracaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/diagnostico': {
+      id: '/diagnostico'
+      path: '/diagnostico'
+      fullPath: '/diagnostico'
+      preLoaderRoute: typeof DiagnosticoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resultados': {
+      id: '/resultados'
+      path: '/resultados'
+      fullPath: '/resultados'
+      preLoaderRoute: typeof ResultadosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resultados/': {
+      id: '/resultados/'
+      path: '/'
+      fullPath: '/resultados/'
+      preLoaderRoute: typeof ResultadosIndexRouteImport
+      parentRoute: typeof ResultadosRoute
+    }
+    '/resultados/$cycleId': {
+      id: '/resultados/$cycleId'
+      path: '/$cycleId'
+      fullPath: '/resultados/$cycleId'
+      preLoaderRoute: typeof ResultadosCycleIdRouteImport
+      parentRoute: typeof ResultadosRoute
+    }
   }
 }
 
+interface ResultadosRouteChildren {
+  ResultadosCycleIdRoute: typeof ResultadosCycleIdRoute
+  ResultadosIndexRoute: typeof ResultadosIndexRoute
+}
+
+const ResultadosRouteChildren: ResultadosRouteChildren = {
+  ResultadosCycleIdRoute: ResultadosCycleIdRoute,
+  ResultadosIndexRoute: ResultadosIndexRoute,
+}
+
+const ResultadosRouteWithChildren = ResultadosRoute._addFileChildren(
+  ResultadosRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ConfiguracaoRoute: ConfiguracaoRoute,
+  DiagnosticoRoute: DiagnosticoRoute,
+  ResultadosRoute: ResultadosRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

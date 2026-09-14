@@ -52,15 +52,19 @@ export function machineStateTone(state: MachineState): Tone {
 }
 
 export function connectionTone(state: ConnectionState): Tone {
-  return state === "connected" ? "ok" : state === "unstable" ? "warn" : "fault";
+  return state === "connected" ? "ok" : state === "unstable" || state === "connecting" || state === "waiting" ? "warn" : "fault";
 }
 
 export function connectionLabel(state: ConnectionState): string {
-  return state === "connected"
-    ? "Connected"
-    : state === "unstable"
-      ? "Unstable"
-      : "Disconnected";
+  const labels: Record<ConnectionState, string> = {
+    waiting: "Aguardando backend",
+    connecting: "Conectando",
+    connected: "Conectado",
+    unstable: "Instável",
+    disconnected: "Desconectado",
+    backend_unavailable: "Backend indisponível",
+  };
+  return labels[state];
 }
 
 export function cycleStatusTone(status: CycleStatus): Tone {

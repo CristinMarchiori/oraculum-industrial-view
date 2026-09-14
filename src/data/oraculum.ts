@@ -19,7 +19,9 @@ import type {
 
 export const getMachines = (): Machine[] => mock.machines;
 export const getMachine = (id: string): Machine =>
-  mock.machines.find((m) => m.id === id) ?? mock.machines[0]!;
+  mock.machines.find((m) => m.id === id) ?? mock.machines[0] ?? {
+    id: "none", name: "Nenhuma máquina", model: "--", protocol: "--", ip: "--", port: 0, line: "--", available: false,
+  };
 
 export const getSignals = (): SignalDef[] => mock.signals;
 export const getCommunicationConfig = (): CommunicationConfig => mock.communicationConfig;

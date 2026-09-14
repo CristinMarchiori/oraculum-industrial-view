@@ -165,9 +165,9 @@ function Sidebar({
 }
 
 function Header() {
-  const { machineId, setMachineId, connection, setConnection, machineState } =
+  const { machineId, pendingMachineId, setPendingMachineId, connection, setConnection, machineState, monitoring } =
     useSession();
-  const machine = getMachine(machineId);
+  const machine = getMachine(machineId || pendingMachineId);
   const cTone = connectionTone(connection);
   const mTone = machineStateTone(machineState);
 
@@ -179,9 +179,9 @@ function Header() {
             <Gauge className="h-4 w-4 text-primary" />
             <span>
               <span className="block font-display text-base font-semibold leading-none tracking-wide text-foreground">
-                {machine.name}
+                {machineId || pendingMachineId ? machine.name : "Nenhuma máquina"}
               </span>
-              <span className="tech-label">{machine.line}</span>
+              <span className="tech-label">{machineId || pendingMachineId ? machine.line : "Seleção pendente"}</span>
             </span>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-60">
@@ -190,7 +190,7 @@ function Header() {
             {getMachines().map((m) => (
               <DropdownMenuItem
                 key={m.id}
-                onClick={() => setMachineId(m.id)}
+                onClick={() => setPendingMachineId(m.id)}
                 className="flex flex-col items-start gap-0.5"
               >
                 <span className="text-sm">{m.name}</span>
@@ -204,13 +204,13 @@ function Header() {
 
         <div className="hidden items-center gap-4 border-l border-border pl-4 md:flex">
           <div>
-            <div className="tech-label">Protocol</div>
-            <div className="readout text-xs text-foreground">{machine.model}</div>
+            <div className="tech-label">Protocolo</div>
+            <div className="readout text-xs text-foreground">{machineId || pendingMachineId ? machine.protocol : "--"}</div>
           </div>
           <div>
-            <div className="tech-label">Endpoint</div>
+            <div className="tech-label">Endereço técnico</div>
             <div className="readout text-xs text-foreground">
-              {machine.ip}:{machine.port}
+              {machineId || pendingMachineId ? `${machine.ip}:${machine.port}` : "--"}
             </div>
           </div>
         </div>
@@ -230,7 +230,7 @@ function Header() {
             <span className="readout">{connectionLabel(connection)}</span>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel className="tech-label">Simular conexão</DropdownMenuLabel>
+            <DropdownMenuLabel className="tech-label">Simular comunicação</DropdownMenuLabel>
             <DropdownMenuSeparator />
             {(["connected", "unstable", "disconnected"] as ConnectionState[]).map((c) => (
               <DropdownMenuItem key={c} onClick={() => setConnection(c)}>
@@ -239,6 +239,9 @@ function Header() {
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
+        <span className="hidden readout text-[11px] text-muted-foreground lg:inline">
+          {monitoring === "running" ? "AQUISIÇÃO ATIVA" : monitoring === "paused" ? "AQUISIÇÃO PAUSADA" : "AQUISIÇÃO PARADA"}
+        </span>
         <Clock />
       </div>
     </header>
@@ -252,7 +255,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
       <div className="flex min-w-0 flex-1 flex-col">
         <Header />
-        <main className="min-h-0 flex-1 overflow-y-auto p-4">{children}</main>
+        <div className="flex min-h-7 items-center justify-center border-b border-warn/35 bg-warn/10 px-3 text-center font-mono text-[10px] font-semibold uppercase text-warn">
+          Modo de demonstração · Dados simulados, sem conexão com o CLP
+        </div>
+        <main className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-4">{children}</main>
       </div>
     </div>
   );
