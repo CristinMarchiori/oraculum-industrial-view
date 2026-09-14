@@ -8,7 +8,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { Sample } from "@/mock/types";
+import type { PressureUnit, Sample } from "@/mock/types";
 import { cn } from "@/lib/utils";
 
 export interface TraceDef {
@@ -20,19 +20,19 @@ export interface TraceDef {
   axis?: "left" | "right";
 }
 
-export const TRACES: TraceDef[] = [
+const traces = (pressureUnit: PressureUnit): TraceDef[] => [
   {
     key: "pressure",
     label: "Pressão",
     color: "var(--signal-pressure)",
-    unit: "bar",
+    unit: pressureUnit,
     axis: "left",
   },
   {
     key: "setpoint",
     label: "Pressão Programada",
     color: "var(--signal-setpoint)",
-    unit: "bar",
+    unit: pressureUnit,
     dashed: true,
     axis: "left",
   },
@@ -52,12 +52,15 @@ const TEMP_TRACES: TraceDef[] = [
   { key: "temperatureMax", label: "Limite máximo", color: "var(--fault)", unit: "°C", axis: "right", dashed: true },
 ];
 
-const PRESSURE_TRACES: TraceDef[] = [
-  TRACES[0] as TraceDef,
-  TRACES[1] as TraceDef,
-  { key: "pressureMin", label: "Limite mínimo", color: "var(--warn)", unit: "bar", dashed: true, axis: "left" },
-  { key: "pressureMax", label: "Limite máximo", color: "var(--fault)", unit: "bar", dashed: true, axis: "left" },
-];
+const pressureTraces = (pressureUnit: PressureUnit): TraceDef[] => {
+  const definitions = traces(pressureUnit);
+  return [
+    definitions[0] as TraceDef,
+    definitions[1] as TraceDef,
+    { key: "pressureMin", label: "Limite mínimo", color: "var(--warn)", unit: pressureUnit, dashed: true, axis: "left" },
+    { key: "pressureMax", label: "Limite máximo", color: "var(--fault)", unit: pressureUnit, dashed: true, axis: "left" },
+  ];
+};
 
 interface OscilloscopeProps {
   data: Sample[];
@@ -66,6 +69,7 @@ interface OscilloscopeProps {
   className?: string;
   mode?: "pressure" | "temperature" | "all";
   domain?: [number, number];
+  pressureUnit?: PressureUnit;
 }
 
 function ScopeTooltip({ active, payload, label }: any) {
@@ -96,8 +100,9 @@ export function Oscilloscope({
   className,
   mode = "all",
   domain,
+  pressureUnit = "bar",
 }: OscilloscopeProps) {
-  const definitions = mode === "pressure" ? PRESSURE_TRACES : mode === "temperature" ? TEMP_TRACES : TRACES;
+  const definitions = mode === "pressure" ? pressureTraces(pressureUnit) : mode === "temperature" ? TEMP_TRACES : traces(pressureUnit);
   const shown = useMemo(() => definitions.filter((t) => visible[t.key] !== false), [definitions, visible]);
 
   return (
@@ -160,12 +165,14 @@ export function ScopeLegend({
   visible,
   onToggle,
   mode = "all",
+  pressureUnit = "bar",
 }: {
   visible: Record<string, boolean>;
   onToggle: (key: string) => void;
   mode?: "pressure" | "temperature" | "all";
+  pressureUnit?: PressureUnit;
 }) {
-  const definitions = mode === "pressure" ? PRESSURE_TRACES : mode === "temperature" ? TEMP_TRACES : TRACES;
+  const definitions = mode === "pressure" ? pressureTraces(pressureUnit) : mode === "temperature" ? TEMP_TRACES : traces(pressureUnit);
   return (
     <div className="flex flex-wrap items-center gap-2">
       {definitions.map((t) => {

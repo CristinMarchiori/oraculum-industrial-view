@@ -22,7 +22,6 @@ import {
   monitoringLabel,
   toneText,
 } from "@/lib/status";
-import type { ConnectionState } from "@/mock/types";
 import { StatusBadge, StatusDot } from "./StatusIndicator";
 import { useSession } from "./session";
 import {
@@ -221,27 +220,16 @@ function Header() {
 
       <div className="flex items-center gap-3">
          <StatusBadge tone={mTone} label={machineStateLabel(machineState)} />
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            className={cn(
-              "flex items-center gap-2 rounded-sm border border-border bg-panel px-2.5 py-1.5 text-xs transition-colors hover:border-primary/50",
-              toneText[cTone],
-            )}
-          >
+        <div
+          className={cn(
+            "flex items-center gap-2 rounded-sm border border-border bg-panel px-2.5 py-1.5 text-xs",
+            toneText[cTone],
+          )}
+        >
             <Cable className="h-3.5 w-3.5" />
             <StatusDot tone={cTone} pulse={connection !== "disconnected"} />
             <span className="readout">{connectionLabel(connection)}</span>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel className="tech-label">Simular comunicação</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {(["connected", "unstable", "disconnected"] as ConnectionState[]).map((c) => (
-              <DropdownMenuItem key={c} onClick={() => setConnection(c)}>
-                {connectionLabel(c)}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        </div>
         <span className="hidden readout text-[11px] text-muted-foreground lg:inline">
            AQUISIÇÃO {monitoringLabel(monitoring)}
         </span>
