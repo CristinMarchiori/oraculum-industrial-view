@@ -166,7 +166,7 @@ function Sidebar({
 }
 
 function Header() {
-  const { machineId, pendingMachineId, setPendingMachineId, connection, setConnection, machineState, monitoring } =
+  const { machineId, pendingMachineId, setPendingMachineId, connection, machineState, monitoring } =
     useSession();
   const machine = getMachine(machineId || pendingMachineId);
   const cTone = connectionTone(connection);
