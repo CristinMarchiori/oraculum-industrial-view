@@ -15,33 +15,36 @@ import type {
 export const machines: Machine[] = [
   {
     id: "M01",
-    name: "Machine 01",
+    name: "Máquina 01",
     model: "SCHNEIDER M340",
     protocol: "Modbus TCP",
     ip: "192.0.2.10",
     port: 502,
-    line: "Press Line A",
+    line: "Linha de Prensa A",
     available: true,
+    pressureUnit: "bar",
   },
   {
     id: "M02",
-    name: "Machine 02",
+    name: "Máquina 02",
     model: "ROCKWELL CONTROLLOGIX",
     protocol: "EtherNet/IP",
     ip: "198.51.100.20",
     port: 44818,
-    line: "Press Line A",
+    line: "Linha de Prensa A",
     available: true,
+    pressureUnit: "kgf/cm²",
   },
   {
     id: "M03",
-    name: "Machine 03",
+    name: "Máquina 03",
     model: "SCHNEIDER M580",
     protocol: "Modbus TCP",
     ip: "203.0.113.30",
     port: 502,
-    line: "Press Line B",
+    line: "Linha de Prensa B",
     available: false,
+    pressureUnit: "bar",
   },
 ];
 
@@ -111,7 +114,7 @@ export const acquisitionConfig: AcquisitionConfig = {
 
 export const triggerConfig: TriggerConfig = {
   status: "Armed",
-  source: "Pressure",
+  source: "Pressão",
   level: 180,
   unit: "bar",
   edge: "Rising",
@@ -260,14 +263,14 @@ export function nextLiveSample(prev: Sample, index: number, setpoint = 200): Sam
 const logLevels: LogLevel[] = ["INFO", "INFO", "INFO", "WARNING", "INFO", "ERROR"];
 const logMessages: Record<LogLevel, string[]> = {
   INFO: [
-    "PLC connected",
-    "Acquisition started",
-    "Cycle recorded",
-    "Signal map reloaded",
-    "Heartbeat OK",
+    "CLP conectado",
+    "Aquisição iniciada",
+    "Ciclo registrado",
+    "Mapa de sinais recarregado",
+    "Sinal de atividade normal",
   ],
-  WARNING: ["Communication delay", "Sample buffer 82% full", "Pressure below setpoint"],
-  ERROR: ["Read timeout", "Modbus exception code 0x04", "Socket reset by peer"],
+  WARNING: ["Atraso na comunicação", "Memória de amostras 82% ocupada", "Pressão abaixo do valor programado"],
+  ERROR: ["Tempo limite de leitura", "Código de exceção Modbus 0x04", "Conexão redefinida pelo equipamento"],
 };
 
 export const logEvents: LogEvent[] = Array.from({ length: 40 }, (_, i) => {
@@ -278,7 +281,7 @@ export const logEvents: LogEvent[] = Array.from({ length: 40 }, (_, i) => {
     id: `EV-${1000 + i}`,
     timestamp: ts.toISOString(),
     level,
-    source: i % 3 === 0 ? "acquisition" : i % 3 === 1 ? "modbus" : "system",
+    source: i % 3 === 0 ? "aquisição" : i % 3 === 1 ? "modbus" : "sistema",
     message: msgs[i % msgs.length]!,
   };
 });
