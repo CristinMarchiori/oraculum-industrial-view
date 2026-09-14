@@ -18,27 +18,30 @@ export const machines: Machine[] = [
     name: "Machine 01",
     model: "SCHNEIDER M340",
     protocol: "Modbus TCP",
-    ip: "172.25.217.210",
+    ip: "192.0.2.10",
     port: 502,
     line: "Press Line A",
+    available: true,
   },
   {
     id: "M02",
     name: "Machine 02",
-    model: "SCHNEIDER M340",
-    protocol: "Modbus TCP",
-    ip: "172.25.217.211",
-    port: 502,
+    model: "ROCKWELL CONTROLLOGIX",
+    protocol: "EtherNet/IP",
+    ip: "198.51.100.20",
+    port: 44818,
     line: "Press Line A",
+    available: true,
   },
   {
     id: "M03",
     name: "Machine 03",
     model: "SCHNEIDER M580",
     protocol: "Modbus TCP",
-    ip: "172.25.217.220",
+    ip: "203.0.113.30",
     port: 502,
     line: "Press Line B",
+    available: false,
   },
 ];
 
@@ -91,7 +94,7 @@ export const signals: SignalDef[] = [
 ];
 
 export const communicationConfig: CommunicationConfig = {
-  ip: "172.25.217.210",
+  ip: "192.0.2.10",
   protocol: "Schneider M340",
   port: 502,
   timeoutMs: 1500,
@@ -165,6 +168,16 @@ export const cycles: Cycle[] = Array.from({ length: 64 }, (_, i) => {
     reliefTime: Math.round((2.4 + rand(i + 5) * 2) * 10) / 10,
     maxTemperature: Math.round((39 + rand(i + 11) * 12) * 10) / 10,
     status: cycleStatusFor(i, max, setpoint),
+      sampleCount: 480 + Math.round(rand(i + 17) * 320),
+      pressurePeriods: [
+        { number: 1, startS: 2.1, endS: 7.8, durationS: 5.7, startPressure: setpoint * 0.86, threshold: setpoint * 0.85 },
+        { number: 2, startS: 8.4, endS: 12.1, durationS: 3.7, startPressure: setpoint * 0.88, threshold: setpoint * 0.85 },
+      ],
+      reliefPeriods: [{ number: 1, startS: 12.1, endS: 14.8, durationS: 2.7 }],
+      csvSaved: i % 9 !== 0,
+      pngSaved: i % 13 !== 0,
+      baseFile: `cycle_${(2481 - i).toString().padStart(5, "0")}`,
+      saveMessage: i % 9 === 0 ? "CSV pendente; gráfico preservado." : "Resultado salvo com sucesso.",
   };
 });
 
@@ -192,6 +205,11 @@ export function cycleWaveform(cycle: Cycle): Sample[] {
       pressure: Math.round(Math.max(0, pressure) * 10) / 10,
       setpoint: cycle.setpoint,
       temperature: Math.round(temperature * 10) / 10,
+      temperature2: Math.round((temperature + Math.sin(i / 11) * 0.8) * 10) / 10,
+      pressureMin: cycle.setpoint * 0.9,
+      pressureMax: cycle.setpoint * 1.06,
+      temperatureMin: 38,
+      temperatureMax: 52,
     };
   });
 }
@@ -205,6 +223,11 @@ export function seedLiveBuffer(length = 240, setpoint = 200): Sample[] {
       pressure: livePressureAt(i, setpoint),
       setpoint,
       temperature: Math.round((42 + Math.sin(i / 37) * 1.8 + rand(i) * 0.4) * 10) / 10,
+      temperature2: Math.round((43 + Math.sin(i / 41) * 1.5 + rand(i + 4) * 0.4) * 10) / 10,
+      pressureMin: setpoint * 0.9,
+      pressureMax: setpoint * 1.06,
+      temperatureMin: 38,
+      temperatureMax: 52,
     };
   });
 }
@@ -225,6 +248,12 @@ export function nextLiveSample(prev: Sample, index: number, setpoint = 200): Sam
     setpoint,
     temperature:
       Math.round((42 + Math.sin(index / 37) * 1.8 + rand(index) * 0.4) * 10) / 10,
+    temperature2:
+      Math.round((43 + Math.sin(index / 41) * 1.5 + rand(index + 4) * 0.4) * 10) / 10,
+    pressureMin: setpoint * 0.9,
+    pressureMax: setpoint * 1.06,
+    temperatureMin: 38,
+    temperatureMax: 52,
   };
 }
 
