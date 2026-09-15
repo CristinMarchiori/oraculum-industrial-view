@@ -32,6 +32,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  backendDisponivel,
+  obterEstadoBackend,
+} from "@/services/pywebview";
 
 const APP_VERSION = "v2.0.0-rc1";
 
@@ -241,15 +245,68 @@ function Header() {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
+  const [backendStatus, setBackendStatus] = useState(
+    "Aguardando conexão com o backend",
+  );
+
+  useEffect(() => {
+    let ativo = true;
+
+    const consultarBackend = async () => {
+      if (!backendDisponivel()) {
+        if (ativo) {
+          setBackendStatus("Backend indisponível · modo de demonstração");
+        }
+        return;
+      }
+
+      try {
+        const estado = await obterEstadoBackend();
+
+        if (!ativo || !estado) {
+          return;
+        }
+
+        setBackendStatus(
+          `Backend conectado · ${estado.maquinas_disponiveis.length} máquinas disponíveis`,
+        );
+      } catch {
+        if (ativo) {
+          setBackendStatus("Falha ao consultar o backend");
+        }
+      }
+    };
+
+    const aoPyWebViewPronto = () => {
+      void consultarBackend();
+    };
+
+    window.addEventListener("pywebviewready", aoPyWebViewPronto);
+    void consultarBackend();
+
+    return () => {
+      ativo = false;
+      window.removeEventListener("pywebviewready", aoPyWebViewPronto);
+    };
+  }, []);
+
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background">
-      <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
+      <Sidebar
+        collapsed={collapsed}
+        onToggle={() => setCollapsed((c) => !c)}
+      />
+
       <div className="flex min-w-0 flex-1 flex-col">
         <Header />
+
         <div className="flex min-h-7 items-center justify-center border-b border-warn/35 bg-warn/10 px-3 text-center font-mono text-[10px] font-semibold uppercase text-warn">
-          Modo de demonstração · Dados simulados, sem conexão com o CLP
+          {backendStatus}
         </div>
-        <main className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-4">{children}</main>
+
+        <main className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-4">
+          {children}
+        </main>
       </div>
     </div>
   );
