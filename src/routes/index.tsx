@@ -64,21 +64,38 @@ function Index() {
     session.setOperationalMessage(next === "running" ? (session.monitoring === "paused" ? "Aquisição simulada retomada." : "Aquisição simulada iniciada; aguardando disparo do ciclo.") : next === "paused" ? "Aquisição simulada pausada." : "Aquisição simulada encerrada com segurança.");
   };
   const scenarios: { value: DemoScenario; label: string }[] = [
-    { value: "no-machine", label: "Nenhuma máquina" }, { value: "schneider", label: "Schneider conectada" },
-    { value: "rockwell", label: "Rockwell conectada" }, { value: "waiting-trigger", label: "Aguardando disparo" },
-    { value: "running", label: "Ciclo em andamento" }, { value: "paused", label: "Ciclo pausado" },
-    { value: "communication-fault", label: "Falha de comunicação" }, { value: "completed", label: "Ciclo concluído" },
-    { value: "partial-save", label: "Resultado salvo parcialmente" }, { value: "no-temperature", label: "Temperaturas não configuradas" },
+    { value: "running", label: "Linha de Prensa — Ciclo normal" },
+    { value: "warning", label: "Linha de Prensa — Ciclo com atenção" },
+    { value: "communication-fault", label: "Falha — Máquina desconectada" },
+    { value: "waiting-trigger", label: "Aguardando disparo" },
+    { value: "paused", label: "Ciclo pausado" },
+    { value: "completed", label: "Ciclo concluído" },
+    { value: "partial-save", label: "Resultado salvo parcialmente" },
+    { value: "no-temperature", label: "Temperaturas não configuradas" },
+    { value: "rockwell", label: "Máquina Rockwell conectada" },
+    { value: "no-machine", label: "Nenhuma máquina" },
   ];
 
   return (
     <div className="space-y-3">
-      <section className="flex flex-wrap items-end justify-between gap-3 border-b border-border pb-3">
+      <section className="flex flex-wrap items-end justify-between gap-3 border-b border-border pb-2">
         <div><p className="tech-label">Operação / Linha de prensa</p><h1 className="font-display text-2xl font-semibold uppercase text-foreground">Monitoração de ciclo</h1></div>
         <div className="flex flex-wrap items-end gap-2">
-          <label className="space-y-1"><span className="tech-label block">Cenário de demonstração</span><Select value={session.scenario} onValueChange={(value) => session.applyScenario(value as DemoScenario)}><SelectTrigger className="w-52"><SelectValue /></SelectTrigger><SelectContent>{scenarios.map((item) => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}</SelectContent></Select></label>
+          <label className="space-y-1"><span className="tech-label block">Cenário de demonstração</span><Select value={session.scenario} onValueChange={(value) => session.applyScenario(value as DemoScenario)}><SelectTrigger className="w-72 max-w-[80vw]"><SelectValue /></SelectTrigger><SelectContent>{scenarios.map((item) => <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}</SelectContent></Select></label>
         </div>
       </section>
+
+      <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_240px]">
+        <Panel title="Osciloscópio de pressão × tempo" subtitle={faulted ? "Dados desatualizados · últimos valores válidos preservados" : "Dados simulados ao vivo · amostragem de 250 ms"} actions={<div className="flex items-center gap-1"><Button size="icon" variant="ghost" title="Aumentar zoom" onClick={() => setZoom((v) => Math.min(4, v + 0.5))}><ZoomIn /></Button><Button size="icon" variant="ghost" title="Reduzir zoom" onClick={() => setZoom((v) => Math.max(1, v - 0.5))}><ZoomOut /></Button><Button size="icon" variant="ghost" title="Restaurar visualização" onClick={() => setZoom(1)}><RotateCcw /></Button></div>}>
+          <ScopeLegend mode="pressure" pressureUnit={confirmedMachine.pressureUnit} visible={visible} onToggle={(key) => setVisible((v) => ({ ...v, [key]: !v[key] }))} />
+          {confirmed ? <Oscilloscope data={displayed} visible={visible} mode="pressure" pressureUnit={confirmedMachine.pressureUnit} height={270} /> : <EmptyChart text="Confirme uma máquina para visualizar as amostras." />}
+        </Panel>
+        <div className="space-y-3">
+          <StatusPlate tone={machineStateTone(session.machineState)} state={machineStateLabel(session.machineState)} caption={confirmed ? `${confirmedMachine.name} · ${session.monitoring === "waiting_trigger" ? "Aguardando disparo" : faulted ? "Dados desatualizados" : "Dados simulados ao vivo"}` : "Máquina não confirmada"} />
+          <MetricCard label="Pressão atual" value={confirmed ? latest?.pressure.toFixed(1).replace(".", ",") ?? "--" : "--"} unit={confirmedMachine.pressureUnit} tone={faulted ? "warn" : confirmed ? "ok" : "idle"} hint={faulted ? "Último valor válido" : "Dentro da faixa"} />
+          <MetricCard label="Pressão programada" value={confirmed ? latest?.setpoint.toFixed(1).replace(".", ",") ?? "--" : "--"} unit={confirmedMachine.pressureUnit} tone="info" hint="Referência do ciclo" />
+        </div>
+      </div>
 
       <Panel title="Seleção segura de máquina" subtitle={confirmed ? "Máquina confirmada" : "Confirmação necessária"} bodyClassName="grid gap-3 md:grid-cols-[minmax(220px,1fr)_1fr_auto] md:items-end">
         <label className="space-y-1"><span className="tech-label block">Máquina a monitorar</span><Select value={session.pendingMachineId} onValueChange={session.setPendingMachineId} disabled={acquisitionActive}><SelectTrigger><SelectValue placeholder="Selecione uma máquina" /></SelectTrigger><SelectContent>{getMachines().map((item) => <SelectItem key={item.id} value={item.id} disabled={!item.available}>{item.name} · {item.model}</SelectItem>)}</SelectContent></Select></label>
@@ -90,9 +107,7 @@ function Index() {
         <div className="flex flex-wrap items-center justify-between gap-3"><p className={faulted ? "text-sm text-warn" : "text-sm text-muted-foreground"}>{session.operationalMessage}</p><StatusBadge tone={machineStateTone(session.machineState)} label={monitoringLabel(session.monitoring)} /></div>
       </Panel>
 
-      <section className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Pressão atual" value={confirmed ? latest?.pressure.toFixed(1).replace(".", ",") ?? "--" : "--"} unit={confirmedMachine.pressureUnit} tone={faulted ? "warn" : confirmed ? "ok" : "idle"} hint={faulted ? "Último valor válido · desatualizado" : confirmed ? "Dentro da faixa" : "Indisponível"} />
-        <MetricCard label="Pressão programada" value={confirmed ? latest?.setpoint.toFixed(1).replace(".", ",") ?? "--" : "--"} unit={confirmedMachine.pressureUnit} tone={faulted ? "warn" : "info"} hint={faulted ? "Valor preservado" : "Referência do ciclo"} />
+      <section className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
         <MetricCard label="Inércia de pressão" value={confirmed ? "18,4" : "--"} unit="UINT" tone="info" hint="Sinal de processo" />
         <MetricCard label="Duração do ciclo" value={session.monitoring === "running" ? "02:43" : "--:--"} unit="min" tone={session.monitoring === "running" ? "ok" : "idle"} hint={session.monitoring === "running" ? "Ciclo em acompanhamento" : "Aguardando ciclo"} />
         <MetricCard label="Temperatura programada" value={confirmed && session.temperaturesConfigured ? "45,0" : "--"} unit="°C" tone={session.temperaturesConfigured ? "info" : "idle"} hint={session.temperaturesConfigured ? "Faixa configurada" : "Não configurada"} />
@@ -102,10 +117,11 @@ function Index() {
       </section>
 
       <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_280px]">
-        <Panel title="Evolução do processo" subtitle={faulted ? "Dados desatualizados · últimos valores válidos preservados" : "Cursor sobre o gráfico exibe a leitura"} actions={<div className="flex gap-1"><Button size="icon" variant="ghost" title="Aumentar zoom" onClick={() => setZoom((v) => Math.min(4, v + 0.5))}><ZoomIn /></Button><Button size="icon" variant="ghost" title="Reduzir zoom" onClick={() => setZoom((v) => Math.max(1, v - 0.5))}><ZoomOut /></Button><Button size="icon" variant="ghost" title="Restaurar visualização" onClick={() => setZoom(1)}><RotateCcw /></Button></div>}>
-          <Tabs defaultValue="pressure"><TabsList className="rounded-sm"><TabsTrigger value="pressure">Pressão</TabsTrigger><TabsTrigger value="temperature">Temperatura</TabsTrigger></TabsList><TabsContent value="pressure"><ScopeLegend mode="pressure" pressureUnit={confirmedMachine.pressureUnit} visible={visible} onToggle={(key) => setVisible((v) => ({ ...v, [key]: !v[key] }))} />{confirmed ? <Oscilloscope data={displayed} visible={visible} mode="pressure" pressureUnit={confirmedMachine.pressureUnit} height={360} /> : <EmptyChart text="Confirme uma máquina para visualizar as amostras." />}</TabsContent><TabsContent value="temperature"><ScopeLegend mode="temperature" visible={visible} onToggle={(key) => setVisible((v) => ({ ...v, [key]: !v[key] }))} />{confirmed && session.temperaturesConfigured ? <Oscilloscope data={displayed} visible={visible} mode="temperature" height={360} /> : <EmptyChart text="Temperaturas não configuradas ou sem amostras." />}</TabsContent></Tabs>
+        <Panel title="Temperatura × tempo" subtitle="Cursor sobre o gráfico exibe a leitura">
+          <ScopeLegend mode="temperature" visible={visible} onToggle={(key) => setVisible((v) => ({ ...v, [key]: !v[key] }))} />
+          {confirmed && session.temperaturesConfigured ? <Oscilloscope data={displayed} visible={visible} mode="temperature" height={300} /> : <EmptyChart text="Temperaturas não configuradas ou sem amostras." />}
         </Panel>
-        <div className="space-y-3"><StatusPlate tone={machineStateTone(session.machineState)} state={machineStateLabel(session.machineState)} caption={confirmed ? `${confirmedMachine.name} · ${session.monitoring === "waiting_trigger" ? "Aguardando disparo" : faulted ? "Dados desatualizados" : "Disparo armado"}` : "Máquina não confirmada"} /><Panel title="Tempo sob pressão" subtitle="2 períodos"><Period label="Período 1" value="5,7 s" /><Period label="Período 2" value="3,7 s" /></Panel><Panel title="Alívio de pressão" subtitle="1 período"><Period label="Alívio 1" value="2,7 s" /></Panel></div>
+        <div className="space-y-3"><Panel title="Tempo sob pressão" subtitle="2 períodos"><Period label="Período 1" value="5,7 s" /><Period label="Período 2" value="3,7 s" /></Panel><Panel title="Alívio de pressão" subtitle="1 período"><Period label="Alívio 1" value="2,7 s" /></Panel></div>
       </div>
     </div>
   );
