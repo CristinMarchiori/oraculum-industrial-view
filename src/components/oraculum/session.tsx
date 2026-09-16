@@ -24,14 +24,14 @@ interface SessionValue {
 const SessionContext = createContext<SessionValue | null>(null);
 
 export function SessionProvider({ children }: { children: ReactNode }) {
-  const [machineId, setMachineId] = useState("");
-  const [pendingMachineId, setPendingMachineId] = useState("");
-  const [connection, setConnection] = useState<ConnectionState>("waiting");
-  const [machineState, setMachineState] = useState<MachineState>("READY");
-  const [monitoring, setMonitoring] = useState<MonitoringState>("stopped");
+  const [machineId, setMachineId] = useState("M01");
+  const [pendingMachineId, setPendingMachineId] = useState("M01");
+  const [connection, setConnection] = useState<ConnectionState>("connected");
+  const [machineState, setMachineState] = useState<MachineState>("RUNNING");
+  const [monitoring, setMonitoring] = useState<MonitoringState>("running");
   const [commandBusy, setCommandBusy] = useState(false);
-  const [operationalMessage, setOperationalMessage] = useState("Selecione e confirme uma máquina para iniciar.");
-  const [scenario, setScenario] = useState<DemoScenario>("no-machine");
+  const [operationalMessage, setOperationalMessage] = useState("Ciclo normal de demonstração em andamento.");
+  const [scenario, setScenario] = useState<DemoScenario>("running");
   const [temperaturesConfigured, setTemperaturesConfigured] = useState(true);
 
   const confirmMachine = async () => {
@@ -64,10 +64,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     setConnection("connected");
     if (next === "waiting-trigger") { setMonitoring("waiting_trigger"); setMachineState("READY"); }
     else if (next === "running") { setMonitoring("running"); setMachineState("RUNNING"); }
+    else if (next === "warning") { setMonitoring("running"); setMachineState("WARNING"); }
     else if (next === "paused") { setMonitoring("paused"); setMachineState("PAUSED"); }
     else if (next === "completed" || next === "partial-save") { setMonitoring("completed"); setMachineState("READY"); }
     else { setMonitoring("stopped"); setMachineState("READY"); }
-    setOperationalMessage(next === "partial-save" ? "Ciclo concluído; CSV pendente no modo de demonstração." : "Cenário de demonstração aplicado.");
+    setOperationalMessage(next === "partial-save" ? "Ciclo concluído; CSV pendente no modo de demonstração." : next === "running" ? "Ciclo normal de demonstração em andamento." : next === "warning" ? "Ciclo em andamento com desvio de pressão acima da faixa recomendada." : "Cenário de demonstração aplicado.");
   };
 
   const value = useMemo(

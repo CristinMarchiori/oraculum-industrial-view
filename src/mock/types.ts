@@ -14,6 +14,7 @@ export type DemoScenario =
   | "rockwell"
   | "waiting-trigger"
   | "running"
+  | "warning"
   | "paused"
   | "communication-fault"
   | "completed"

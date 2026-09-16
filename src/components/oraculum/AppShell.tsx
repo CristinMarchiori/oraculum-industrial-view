@@ -1,7 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Activity,
-  Cable,
   ChevronsLeft,
   ChevronsRight,
   Cpu,
@@ -15,14 +14,11 @@ import { useEffect, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { getMachine, getMachines } from "@/data/oraculum";
 import {
-  connectionLabel,
   connectionTone,
   machineStateLabel,
   machineStateTone,
-  monitoringLabel,
-  toneText,
 } from "@/lib/status";
-import { StatusBadge, StatusDot } from "./StatusIndicator";
+import { StatusBadge } from "./StatusIndicator";
 import { useSession } from "./session";
 import {
   DropdownMenu,
@@ -69,9 +65,6 @@ function Sidebar({
   onToggle: () => void;
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { connection } = useSession();
-  const tone = connectionTone(connection);
-
   return (
     <aside
       className={cn(
@@ -131,14 +124,6 @@ function Sidebar({
       </nav>
 
       <div className="space-y-2 border-t border-sidebar-border p-3">
-        <div className="flex items-center gap-2">
-          <StatusDot tone={tone} pulse={connection !== "disconnected"} />
-          {!collapsed && (
-            <span className={cn("readout text-xs", toneText[tone])}>
-              {connectionLabel(connection)}
-            </span>
-          )}
-        </div>
         {!collapsed && (
           <>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -166,12 +151,11 @@ function Sidebar({
 }
 
 function Header() {
-  const { machineId, pendingMachineId, setPendingMachineId, connection, machineState, monitoring } =
+  const { machineId, pendingMachineId, setPendingMachineId, machineState, monitoring } =
     useSession();
   const machine = getMachine(machineId || pendingMachineId);
-  const cTone = connectionTone(connection);
   const mTone = machineStateTone(machineState);
-  const acquisitionActive = monitoring === "running" || monitoring === "paused";
+  const acquisitionActive = monitoring === "running" || monitoring === "paused" || monitoring === "waiting_trigger";
 
   return (
     <header className="flex h-16 shrink-0 flex-wrap items-center justify-between gap-3 border-b border-border bg-panel-header px-4">
@@ -219,20 +203,7 @@ function Header() {
       </div>
 
       <div className="flex items-center gap-3">
-         <StatusBadge tone={mTone} label={machineStateLabel(machineState)} />
-        <div
-          className={cn(
-            "flex items-center gap-2 rounded-sm border border-border bg-panel px-2.5 py-1.5 text-xs",
-            toneText[cTone],
-          )}
-        >
-            <Cable className="h-3.5 w-3.5" />
-            <StatusDot tone={cTone} pulse={connection !== "disconnected"} />
-            <span className="readout">{connectionLabel(connection)}</span>
-        </div>
-        <span className="hidden readout text-[11px] text-muted-foreground lg:inline">
-           AQUISIÇÃO {monitoringLabel(monitoring)}
-        </span>
+        <div className="flex items-center gap-2"><span className="tech-label hidden sm:inline">Estado geral</span><StatusBadge tone={mTone} label={machineStateLabel(machineState)} /></div>
         <Clock />
       </div>
     </header>
