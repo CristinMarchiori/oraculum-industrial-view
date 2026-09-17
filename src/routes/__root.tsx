@@ -3,6 +3,7 @@ import {
   Outlet,
   Link,
   createRootRouteWithContext,
+  useRouterState,
   useRouter,
   HeadContent,
   Scripts,
@@ -117,11 +118,12 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
 
   return (
     <QueryClientProvider client={queryClient}>
       <SessionProvider>
-        <AppShell><Outlet /></AppShell>
+        {pathname === "/" ? <Outlet /> : <AppShell><Outlet /></AppShell>}
       </SessionProvider>
     </QueryClientProvider>
   );
