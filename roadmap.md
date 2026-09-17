@@ -14,3 +14,4 @@
 - [ ] Consolidar o estado geral e mover detalhes técnicos para Diagnóstico
 - [ ] Padronizar a pressão da tabela de Resultados em bar
 - [ ] Oferecer cenários normal, atenção e falha no modo de demonstração
+- [x] Usar o HTML fornecido como a interface principal, com demonstração local ativa
