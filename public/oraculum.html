@@ -437,42 +437,4 @@ body{background:#eef5fa}
 }
 /* === FIM ALT34 === */
 </style>
-
-<script>
-/* Adaptador local de demonstração para executar este HTML sem o backend Python. */
-(function () {
-  const machines = [
-    { id:'M01', nome:'Máquina 01', ip:'192.0.2.10', protocolo:'SCHNEIDER', unidade_pressao:'bar' },
-    { id:'M02', nome:'Máquina 02', ip:'198.51.100.20', protocolo:'ROCKWELL', unidade_pressao:'kgf/cm²' }
-  ];
-  let active = machines[0], running = true, paused = false, tick = 0;
-  const config = { ip:active.ip, protocolo:active.protocolo, porta:502, offset_modbus:0, trigger:'MW3000:UINT', flag_monitor_status:'MW3004:UINT', tipo_trigger:'NIVEL', trigger_habilitado:true, monitorar_pressao_zero:false, tags:['MW413:UINT','MW3002:UINT','MW414:UINT'], temperatura_programada_tag:'MW409:UINT', temperatura_lida_1_tag:'MW410:UINT', temperatura_lida_2_tag:'MW411:UINT' };
-  const results = [{ numero_ciclo:2481, data_hora:'17/09/2026 17:18:42', status_geral:'Salvo com sucesso', quantidade_amostras:684, tempo_total_sob_pressao_s:9.4, quantidade_periodos_sob_pressao:2, tempo_total_alivio_pressao_s:2.7, quantidade_alivios_pressao:1, csv_salvo:true, png_salvo:true, arquivo_base:'ciclo_02481', maquina_id:'M01', mensagem:'Ciclo concluído e salvo no modo de demonstração.', resumo_temperatura:{disponivel:true,programada_final:45,lida_1_final:45.6,lida_2_final:44.6,lida_1_minima:43.8,lida_1_maxima:46.2,lida_2_minima:43.5,lida_2_maxima:45.8,desvio_final_1:.6,desvio_final_2:-.4} }];
-  const buildState = () => {
-    if (running && !paused) tick += .25;
-    const count = 160, tempo = Array.from({length:count},(_,i)=>Math.max(0,tick-(count-i-1)*.25));
-    const pressure = tempo.map((t,i)=>Math.max(0, 187 + 9*Math.sin((i+tick)*.14) + 3*Math.sin(i*.39)));
-    const setpoint = tempo.map(()=>200);
-    const t1 = tempo.map((t,i)=>45 + .7*Math.sin((i+tick)*.08));
-    const t2 = tempo.map((t,i)=>44.7 + .55*Math.cos((i+tick)*.075));
-    return { conectado:true, rodando:running, pausado:paused, ciclo_ativo:running, pressao_lida:pressure.at(-1), pressao_programada:200, temperatura_programada:45, temperatura_lida_1:t1.at(-1), temperatura_lida_2:t2.at(-1), temperaturas_configuradas:true, inercia_pressao:18.4, trigger:1, monitor_status:running?1:0, form_quantidade:41, mensagem:paused?'Aquisição simulada pausada.':running?'Ciclo normal de demonstração em andamento.':'Monitoração parada.', ultimo_arquivo:'ciclo_02481', amostras:running?684+Math.round(tick*4):684, tempos_sob_pressao:[5.7,3.7], tempos_ventilacao:[2.7], serie_tempo:tempo, serie_pressao_lida:pressure, serie_pressao_programada:setpoint, limite_minimo:180, limite_maximo:220, serie_temperatura_programada:tempo.map(()=>45), serie_temperatura_lida_1:t1, serie_temperatura_lida_2:t2, serie_limite_temperatura_minimo:tempo.map(()=>42), serie_limite_temperatura_maximo:tempo.map(()=>48), pontos_temperatura_lida_1_fora_limites:[], pontos_temperatura_lida_2_fora_limites:[], resultados:results, maquina_selecionada:true, troca_maquina_bloqueada:running, maquina_ativa:active, maquinas_disponiveis:machines, estado_comunicacao:running?'monitorando':'conectada' };
-  };
-  const ok = mensagem => Promise.resolve({ sucesso:true, mensagem });
-  window.pywebview = { api: {
-    obter_estado: async () => buildState(),
-    obter_configuracao: async () => ({...config,ip:active.ip,protocolo:active.protocolo}),
-    listar_maquinas: async () => ({sucesso:true,maquinas:machines,maquina_ativa:active}),
-    selecionar_maquina: async id => { const found=machines.find(m=>m.id===id); if(found&&!running) active=found; return {sucesso:!!found&&!running,mensagem:running?'Troca bloqueada durante a aquisição.':'Máquina selecionada.',maquina_ativa:active,configuracao:{...config,ip:active.ip,protocolo:active.protocolo}}; },
-    iniciar: async () => { running=true; paused=false; return {sucesso:true,mensagem:'Aquisição simulada iniciada.'}; },
-    pausar: async () => { paused=!paused; return {sucesso:true,mensagem:paused?'Aquisição simulada pausada.':'Aquisição simulada retomada.'}; },
-    parar: async () => { running=false; paused=false; return {sucesso:true,mensagem:'Aquisição simulada encerrada.'}; },
-    testar_comunicacao: async () => ({sucesso:true,mensagem:'Comunicação simulada confirmada.'}),
-    testar_form: async () => ({sucesso:true,mensagem:'Vetor FORM[0] simulado: 41 registros.'}),
-    salvar_configuracao: async dados => ({sucesso:true,mensagem:'Configuração simulada salva.',configuracao:dados}),
-    obter_detalhes_ciclo: async base => ({sucesso:true,numero_ciclo:2481,data_hora:'17/09/2026 17:18:42',arquivo_base:base||'ciclo_02481',maquina_id:'M01',quantidade_amostras:684,tempo_total_sob_pressao_s:9.4,quantidade_periodos_sob_pressao:2,tempo_total_alivio_pressao_s:2.7,quantidade_alivios_pressao:1,arquivos_ausentes:['PNG'],png_base64:'',periodos_sob_pressao:[{numero:1,inicio_s:12.1,fim_s:17.8,duracao_s:5.7,pressao_inicio:183.2,limiar:180},{numero:2,inicio_s:20.4,fim_s:24.1,duracao_s:3.7,pressao_inicio:181.9,limiar:180}],periodos_alivio_pressao:[{numero:1,inicio_s:17.8,fim_s:20.5,duracao_s:2.7}],resumo_temperatura:results[0].resumo_temperatura,mensagem:'Detalhes simulados carregados.'})
-  }};
-  setTimeout(() => window.dispatchEvent(new Event('pywebviewready')), 100);
-})();
-</script>
-
 </body></html>
