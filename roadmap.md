@@ -15,3 +15,7 @@
 - [ ] Padronizar a pressão da tabela de Resultados em bar
 - [ ] Oferecer cenários normal, atenção e falha no modo de demonstração
 - [x] Usar o HTML fornecido como a interface principal, com demonstração local ativa
+- [ ] Consolidar o HTML em um frontend industrial profissional e manutenível
+- [ ] Preservar todos os contratos existentes de window.pywebview.api
+- [ ] Redesenhar Monitoração, Resultados, Detalhes, Configuração e Diagnóstico por prioridade
+- [ ] Validar comandos, dados reais do backend e apresentação desktop
