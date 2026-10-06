@@ -1,5 +1,12 @@
 # Oraculum Frontend V2
 
+## Proposta visual atual — sem integração definitiva
+- [ ] Criar Visão Geral em cópia isolada do HTML anexado, preservando o original.
+- [ ] Validar filtros, estados e abertura visual da monitoração sem chamadas ao CLP.
+- [ ] Aguardar avaliação do usuário antes de integrar definitivamente.
+
+## Trabalho anterior — fora do escopo desta proposta
+
 - [x] Concluir fluxo global, layout e cenários de demonstração
 - [x] Construir Monitoração e gráficos operacionais
 - [x] Construir Resultados e detalhes do ciclo
