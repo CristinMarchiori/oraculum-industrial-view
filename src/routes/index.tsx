@@ -2,10 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [
-    { title: "Monitoração — Oraculum" },
-    { name: "description", content: "Monitoração simulada de ciclos, pressão e temperatura de prensas industriais." },
-    { property: "og:title", content: "Monitoração — Oraculum" },
-    { property: "og:description", content: "Monitoração simulada de ciclos, pressão e temperatura de prensas industriais." },
+    { title: "Visão Geral das Máquinas — Oraculum" },
+    { name: "description", content: "Proposta visual de supervisão centralizada das prensas cadastradas no Oraculum, com dados de demonstração." },
+    { property: "og:title", content: "Visão Geral das Máquinas — Oraculum" },
+    { property: "og:description", content: "Proposta visual de supervisão centralizada das prensas cadastradas no Oraculum, com dados de demonstração." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary_large_image" },
   ] }),
@@ -15,8 +15,8 @@ export const Route = createFileRoute("/")({
 function Index() {
   return (
     <iframe
-      src="/oraculum.html"
-      title="Oraculum — Osciloscópio Industrial"
+      src="/oraculum-proposta.html"
+      title="Oraculum — Proposta visual de Visão Geral"
       className="block h-screen w-full border-0 bg-background"
     />
   );
